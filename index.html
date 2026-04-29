@@ -17,7 +17,7 @@
 <body>
 
     <h1>ECHO CHAMBER v1.0</h1>
-    <p>The sound fades with each beat...</p>
+    <p>The sound fades with each tick...</p>
 
     <textarea id="code" placeholder="Your code... (A - scream, s - whisper, @ - hear, [] - mirrors)">$ Hello World in EchoChamber
 As s s s . . . . . . . . . . @ $ Prints "H"
@@ -96,7 +96,7 @@ As s s s . . . . . . . . . . @ $ Prints "H"
             }
 
             outputElement.innerText = output || "> Тишина...";
-            statsElement.innerText = `Выполнено за ${ticks} тактов.`;
+            statsElement.innerText = `Completed in ${ticks} ticks.`;
         }
     </script>
 </body>
