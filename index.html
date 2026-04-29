@@ -38,7 +38,9 @@ As s s s . . . . . . . . . . @ $ Prints "H"
             
             // 1. Очистка от комментариев и лишних пробелов
             let code = rawCode.split('\n').map(line => line.split('$')[0]).join('').replace(/\s/g, '');
-            
+            // Оставляем только реальные команды и циклы, убирая пробелы, табы и переносы
+            code = code.replace(/[^As@()\[\]\+#s]/g, ''); 
+
             let rooms = new Array(300).fill(0);
             let pointer = 0;
             let pc = 0;
