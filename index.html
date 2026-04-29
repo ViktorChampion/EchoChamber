@@ -32,77 +32,75 @@ As s s s . . . . . . . . . . @ $ Prints "H"
 
     <script>
         function runEcho() {
-            const rawCode = document.getElementById('code').value;
-            const outputElement = document.getElementById('output');
-            const statsElement = document.getElementById('stats');
-            
-            // 1. Очистка от комментариев и лишних пробелов
-            let code = rawCode.split('\n').map(line => line.split('$')[0]).join('').replace(/\s/g, '');
-            // Оставляем только реальные команды и циклы, убирая пробелы, табы и переносы
-            code = code.replace(/[^As@()\[\]\+#s]/g, ''); 
+    const rawCode = document.getElementById('code').value;
+    const outputElement = document.getElementById('output');
+    
+    // 1. Убираем комментарии (всё после $)
+    let lines = rawCode.split('\n');
+    let cleanCode = "";
+    for (let line of lines) {
+        cleanCode += line.split('$')[0];
+    }
 
-            let rooms = new Array(300).fill(0);
-            let pointer = 0;
-            let pc = 0;
-            let output = "";
-            let loopStack = [];
-            let ticks = 0;
-
-            const decay = () => {
-                for (let i = 0; i < rooms.length; i++) {
-                    if (rooms[i] > 0) rooms[i]--;
-                }
-            };
-
-            // Предотвращение бесконечных циклов (макс. 100,000 тактов)
-            while (pc < code.length && ticks < 100000) {
-                let cmd = code[pc];
-                ticks++;
-
-                if (cmd === 'A') {
-                    rooms[pointer] = 127;
-                } else if (cmd === 's') {
-                    rooms[pointer] = Math.max(0, rooms[pointer] - 10);
-                } else if (cmd === '(') {
-                    pointer = Math.max(0, pointer - 1);
-                } else if (cmd === ')') {
-                    pointer = Math.min(rooms.length - 1, pointer + 1);
-                } else if (cmd === '@') {
-                    output += String.fromCharCode(rooms[pointer]);
-                } else if (cmd === '[') {
-                    let v = rooms[pointer];
-                    if (v > 0) {
-                        loopStack.push({ start: pc, count: v });
-                    } else {
-                        let depth = 1;
-                        while (depth > 0 && pc < code.length) {
-                            pc++;
-                            if (code[pc] === '[') depth++;
-                            if (code[pc] === ']') depth--;
-                        }
-                    }
-                } else if (cmd === ']') {
-                    if (loopStack.length > 0) {
-                        let currentLoop = loopStack[loopStack.length - 1];
-                        currentLoop.count--;
-                        if (currentLoop.count > 0 && rooms[pointer] > 0) {
-                            pc = currentLoop.start;
-                        } else {
-                            loopStack.pop();
-                        }
-                    }
-                }
-                else if (cmd === '+') {
-                    rooms[pointer] = Math.min(127, rooms[pointer] + 10);
-                }
-
-                decay();
-                pc++;
-            }
-
-            outputElement.innerText = output || "> Тишина...";
-            statsElement.innerText = `Completed in ${ticks} ticks.`;
+    // 2. ОСТАВЛЯЕМ ТОЛЬКО КОМАНДЫ (это решит проблему с RR и пробелами)
+    // Теперь пробелы, переносы строк и буквы типа 'R' не будут тратить время!
+    const validCommands = "As@()[]+#."; 
+    let code = "";
+    for (let char of cleanCode) {
+        if (validCommands.includes(char)) {
+            code += char;
         }
+    }
+    
+    let rooms = new Array(300).fill(0);
+    let pointer = 0;
+    let pc = 0;
+    let output = "";
+    let loopStack = [];
+    let ticks = 0;
+
+    const decay = () => {
+        for (let i = 0; i < rooms.length; i++) {
+            if (rooms[i] > 0) rooms[i]--;
+        }
+    };
+
+    while (pc < code.length && ticks < 100000) {
+        let cmd = code[pc];
+        ticks++;
+
+        if (cmd === 'A') rooms[pointer] = 127;
+        else if (cmd === 's') rooms[pointer] = Math.max(0, rooms[pointer] - 10);
+        else if (cmd === '+') rooms[pointer] = Math.min(127, rooms[pointer] + 10);
+        else if (cmd === '(') pointer = Math.max(0, pointer - 1);
+        else if (cmd === ')') pointer = min(rooms.length - 1, pointer + 1);
+        else if (cmd === '@') output += String.fromCharCode(rooms[pointer]);
+        else if (cmd === '[') {
+            let v = rooms[pointer];
+            if (v > 0) loopStack.push({ start: pc, count: v });
+            else {
+                let depth = 1;
+                while (depth > 0 && pc < code.length) {
+                    pc++;
+                    if (code[pc] === '[') depth++;
+                    if (code[pc] === ']') depth--;
+                }
+            }
+        } else if (cmd === ']') {
+            if (loopStack.length > 0) {
+                let currentLoop = loopStack[loopStack.length - 1];
+                currentLoop.count--;
+                if (currentLoop.count > 0 && rooms[pointer] > 0) pc = currentLoop.start;
+                else loopStack.pop();
+            }
+        }
+
+        decay();
+        pc++;
+    }
+    outputElement.innerText = output || "> Тишина...";
+}
+
     </script>
 </body>
 </html>
