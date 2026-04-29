@@ -1,164 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Гиперкуб: Профессиональный редактор</title>
+    <meta charset="UTF-8">
+    <title>EchoChamber IDE</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: row; background: #fff; margin: 0; height: 100vh; overflow: hidden; }
-        
-        /* Левая панель с 10 ползунками */
-        .left-panel { width: 250px; padding: 20px; border-right: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .control-group { text-align: center; border-bottom: 1px solid #f9f9f9; padding-bottom: 5px; }
-        .control-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
-        input[type=range] { width: 100%; }
-
-        /* Правая панель для настройки цветов */
-        .side-panel { width: 200px; padding: 20px; background: #fafafa; border-left: 1px solid #eee; display: flex; flex-direction: column; gap: 15px; }
-        .side-panel h3 { font-size: 14px; margin: 0 0 10px 0; }
-        select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
-
-        canvas { flex-grow: 1; cursor: crosshair; }
+        body { background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #fff; text-shadow: 0 0 10px #00ff00; }
+        textarea { width: 80%; height: 200px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 10px; font-size: 16px; margin-bottom: 10px; }
+        .controls { margin-bottom: 20px; }
+        button { background: #00ff00; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; font-family: inherit; }
+        button:hover { background: #fff; }
+        #output { width: 80%; min-height: 100px; background: #000; border: 1px dashed #00ff00; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .status { font-size: 0.8em; color: #888; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div class="left-panel" id="sizeControls">
-    <h3 style="font-size: 14px;">Размеры осей</h3>
-    <!-- Ползунки 1-10D генерируются скриптом -->
-</div>
+    <h1>ECHO CHAMBER v1.0</h1>
+    <p>Звук затухает с каждым тактом...</p>
 
-<canvas id="hypercanvas" width="800" height="700"></canvas>
+    <textarea id="code" placeholder="Введите код здесь... (A - крик, s - шепот, @ - слушать, [] - зеркала)">$ Hello World в EchoChamber
+As s s s . . . . . . . @ $ Печатает 'H'
+    </textarea>
 
-<div class="side-panel">
-    <h3>Настройка цвета</h3>
-    <label style="font-size: 12px;">Выбери линию:</label>
-    <select id="dimSelector">
-        <!-- Опции 1D-10D -->
-    </select>
-    
-    <div class="control-group">
-        <label style="color:red">Red</label>
-        <input type="range" id="r" min="0" max="255" value="0">
+    <div class="controls">
+        <button onclick="runEcho()">ЗАПУСТИТЬ РЕЗОНАНС</button>
     </div>
-    <div class="control-group">
-        <label style="color:green">Green</label>
-        <input type="range" id="g" min="0" max="255" value="0">
-    </div>
-    <div class="control-group">
-        <label style="color:blue">Blue</label>
-        <input type="range" id="b" min="0" max="255" value="0">
-    </div>
-    <div id="colorPreview" style="width:100%; height:20px; border-radius:4px; border:1px solid #ccc;"></div>
-</div>
 
-<script>
-    const canvas = document.getElementById('hypercanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Массив объектов для хранения состояния каждого измерения
-    const dimSettings = [];
-    const defaultColors = [
-        [0,0,0], [0,123,255], [220,53,69], [40,167,69], [111,66,193], 
-        [253,126,20], [32,201,151], [232,62,140], [23,162,184], [52,58,64]
-    ];
-    const offsets = [
-        {dx: 0, dy: -100}, {dx: 120, dy: -60}, {dx: 150, dy: 10}, 
-        {dx: -40, dy: -80}, {dx: 60, dy: 40}, {dx: -80, dy: 20},
-        {dx: 20, dy: -110}, {dx: 100, dy: -30}, {dx: -50, dy: -40}, {dx: 40, dy: 70}
-    ];
+    <div id="output"></div>
+    <div class="status" id="stats"></div>
 
-    // Инициализация
-    const sizePanel = document.getElementById('sizeControls');
-    const selector = document.getElementById('dimSelector');
-    
-    for (let i = 0; i < 10; i++) {
-        // Данные
-        dimSettings.push({
-            size: i < 3 ? 100 : 0,
-            color: [...defaultColors[i]]
-        });
+    <script>
+        function runEcho() {
+            const rawCode = document.getElementById('code').value;
+            const outputElement = document.getElementById('output');
+            const statsElement = document.getElementById('stats');
+            
+            // 1. Очистка от комментариев и лишних пробелов
+            let code = rawCode.split('\n').map(line => line.split('$')[0]).join('').replace(/\s/g, '');
+            
+            let rooms = new Array(300).fill(0);
+            let pointer = 0;
+            let pc = 0;
+            let output = "";
+            let loopStack = [];
+            let ticks = 0;
 
-        // HTML для размеров
-        const div = document.createElement('div');
-        div.className = 'control-group';
-        div.innerHTML = `<label>${i+1}D Размер</label><input type="range" id="size${i}" min="0" max="150" value="${dimSettings[i].size}">`;
-        sizePanel.appendChild(div);
-        div.querySelector('input').oninput = (e) => {
-            dimSettings[i].size = parseInt(e.target.value);
-            draw();
-        };
+            const decay = () => {
+                for (let i = 0; i < rooms.length; i++) {
+                    if (rooms[i] > 0) rooms[i]--;
+                }
+            };
 
-        // HTML для селектора
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.innerText = `${i+1}D Линия`;
-        selector.appendChild(opt);
-    }
+            // Предотвращение бесконечных циклов (макс. 100,000 тактов)
+            while (pc < code.length && ticks < 100000) {
+                let cmd = code[pc];
+                ticks++;
 
-    // Логика переключения цветов
-    const rIn = document.getElementById('r'), gIn = document.getElementById('g'), bIn = document.getElementById('b');
-    const preview = document.getElementById('colorPreview');
+                if (cmd === 'A') {
+                    rooms[pointer] = 127;
+                } else if (cmd === 's') {
+                    rooms[pointer] = Math.max(0, rooms[pointer] - 10);
+                } else if (cmd === '(') {
+                    pointer = Math.max(0, pointer - 1);
+                } else if (cmd === ')') {
+                    pointer = Math.min(rooms.length - 1, pointer + 1);
+                } else if (cmd === '@') {
+                    output += String.fromCharCode(rooms[pointer]);
+                } else if (cmd === '[') {
+                    let v = rooms[pointer];
+                    if (v > 0) {
+                        loopStack.push({ start: pc, count: v });
+                    } else {
+                        let depth = 1;
+                        while (depth > 0 && pc < code.length) {
+                            pc++;
+                            if (code[pc] === '[') depth++;
+                            if (code[pc] === ']') depth--;
+                        }
+                    }
+                } else if (cmd === ']') {
+                    if (loopStack.length > 0) {
+                        let currentLoop = loopStack[loopStack.length - 1];
+                        currentLoop.count--;
+                        if (currentLoop.count > 0 && rooms[pointer] > 0) {
+                            pc = currentLoop.start;
+                        } else {
+                            loopStack.pop();
+                        }
+                    }
+                }
 
-    function updateColorInputs() {
-        const d = selector.value;
-        const [r, g, b] = dimSettings[d].color;
-        rIn.value = r; gIn.value = g; bIn.value = b;
-        preview.style.background = `rgb(${r},${g},${b})`;
-    }
-
-    [rIn, gIn, bIn].forEach(input => {
-        input.oninput = () => {
-            const d = selector.value;
-            dimSettings[d].color = [parseInt(rIn.value), parseInt(gIn.value), parseInt(bIn.value)];
-            updateColorInputs();
-            draw();
-        };
-    });
-
-    selector.onchange = updateColorInputs;
-    updateColorInputs();
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let vertices = [{x: 250, y: 550}];
-        let edges = [];
-
-        dimSettings.forEach((dim, i) => {
-            if (dim.size <= 0) return;
-            const vx = (offsets[i].dx * dim.size) / 100;
-            const vy = (offsets[i].dy * dim.size) / 100;
-
-            const vCount = vertices.length;
-            const eCount = edges.length;
-            const c = dim.color;
-            const colorStr = `rgb(${c[0]},${c[1]},${c[2]})`;
-
-            for (let j = 0; j < vCount; j++) {
-                vertices.push({ x: vertices[j].x + vx, y: vertices[j].y + vy });
+                decay();
+                pc++;
             }
-            for (let j = 0; j < eCount; j++) {
-                edges.push({ p1: edges[j].p1 + vCount, p2: edges[j].p2 + vCount, color: edges[j].color });
-            }
-            for (let j = 0; j < vCount; j++) {
-                edges.push({ p1: j, p2: j + vCount, color: colorStr });
-            }
-        });
 
-        edges.forEach(e => {
-            ctx.strokeStyle = e.color;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(vertices[e.p1].x, vertices[e.p1].y);
-            ctx.lineTo(vertices[e.p2].x, vertices[e.p2].y);
-            ctx.stroke();
-        });
-
-        if(vertices.length <= 1024) {
-            ctx.fillStyle = '#000';
-            vertices.forEach(v => ctx.fillRect(v.x-1.5, v.y-1.5, 3, 3));
+            outputElement.innerText = output || "> Тишина...";
+            statsElement.innerText = `Выполнено за ${ticks} тактов.`;
         }
-    }
-
-    draw();
-</script>
+    </script>
 </body>
 </html>
