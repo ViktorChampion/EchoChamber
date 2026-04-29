@@ -90,6 +90,9 @@ As s s s . . . . . . . . . . @ $ Prints "H"
                         }
                     }
                 }
+                else if (cmd === '+') {
+                    rooms[pointer] = Math.min(127, rooms[pointer] + 10);
+                }
 
                 decay();
                 pc++;
