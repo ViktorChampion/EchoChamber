@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>EchoChamber IDE v1.1</title>
+    <title>EchoChamber IDE v1.0</title>
     <style>
         body { background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         h1 { color: #fff; text-shadow: 0 0 10px #00ff00; margin-bottom: 5px; }
@@ -20,7 +20,7 @@
 </head>
 <body>
 
-    <h1>ECHO CHAMBER v1.1</h1>
+    <h1>ECHO CHAMBER v1.0</h1>
     <div class="container">
         <div class="label">Code Editor:</div>
         <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ HI! Example
@@ -72,7 +72,6 @@ Assssssss.....@ $ !</textarea>
                     let isCommand = "AsSa@()[],.".includes(char);
                     
                     if (isCommand) {
-                        // Выполнение команд
                         if (char === 'A') rooms[pointer] = 255;
                         else if (char === 's') rooms[pointer] = Math.max(0, rooms[pointer] - 10);
                         else if (char === 'a') rooms[pointer] = Math.min(255, rooms[pointer] + 10);
@@ -84,11 +83,9 @@ Assssssss.....@ $ !</textarea>
                             rooms[pointer] = inputPtr < userInput.length ? userInput.charCodeAt(inputPtr++) : 0;
                         }
 
-                        // Дебаг-инфо
                         let val = rooms[pointer];
                         currentLineDebug += (showCommands ? `${char}-${val} ` : `${val} `);
                         
-                        // Затухание только на . (пауза) или при перемещении ( )
                         if (char === '.' || char === '(' || char === ')') {
                             for(let i=0; i<rooms.length; i++) if(rooms[i]>0) rooms[i]--;
                         }
