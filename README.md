@@ -11,7 +11,8 @@ The program runs in a space of 300 "rooms".
 ## 🛠 Syntax
 - `A` (**Scream**) — Sets volume in the current room to **127** (max).
 - `s` (**Whisper**) — Decreases volume by **10** (+1 from the tick decay).
-- `.` (**Pause**) — Does nothing but spends a tick (volume drops by 1). Any character not recognized as a command is treated as a pause.
+- `a` (**Add**) — Increases volume by **10** (capped at 127).
+- `.` (**Pause**) — Does nothing but spends a tick (volume drops by 1). 
 - `@` (**Listen**) — Outputs the ASCII character of the current volume.
 - `(` / `)` — Move the pointer to the left or right room.
 - `[` ... `]` — **Mirror Loop**. Repeats as many times as the volume level was when entering the loop. The loop breaks if silence (0) occurs.
@@ -41,7 +42,8 @@ ________________________________________________________________
 ## 🛠 Синтаксис
 - `A` (**Крик**) — Устанавливает громкость в текущей комнате на **127** (макс).
 - `s` (**Шепот**) — Снижает громкость на **10** (+1 от затухания такта).
-- `.` (**Пауза**) — Ничего не делает, но тратит такт (звук падает на 1). Любой другой символ (кроме команд) также считается паузой.
+- `a` (**Усиление**) — Увеличивает громкость на **10** (но не выше 127).
+- `.` (**Пауза**) — Ничего не делает, но тратит такт (звук падает на 1). 
 - `@` (**Слушать**) — Выводит символ ASCII, соответствующий текущей громкости.
 - `(` / `)` — Переход в соседнюю комнату влево или вправо.
 - `[` ... `]` — **Зеркальный цикл**. Повторяется столько раз, сколько было громкости при входе. Цикл прерывается, если наступает тишина.
