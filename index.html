@@ -7,11 +7,16 @@
         body { background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         h1 { color: #fff; text-shadow: 0 0 10px #00ff00; margin-bottom: 5px; }
         p { margin-bottom: 20px; color: #888; }
-        textarea { width: 80%; height: 250px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 15px; font-size: 16px; margin-bottom: 10px; outline: none; }
+        textarea { width: 80%; height: 200px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 15px; font-size: 16px; margin-bottom: 10px; outline: none; }
         .controls { margin-bottom: 20px; }
         button { background: #00ff00; color: #000; border: none; padding: 12px 24px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.3s; }
         button:hover { background: #fff; box-shadow: 0 0 15px #fff; }
-        #output { width: 80%; min-height: 100px; background: #000; border: 1px dashed #00ff00; padding: 15px; white-space: pre-wrap; word-wrap: break-word; font-size: 1.2em; }
+        #output { width: 80%; min-height: 50px; background: #000; border: 1px dashed #00ff00; padding: 15px; white-space: pre-wrap; word-wrap: break-word; font-size: 1.2em; margin-bottom: 10px; }
+        
+        /* НОВОЕ ПОЛЕ ДЛЯ ГРОМКОСТИ */
+        #volume-display { width: 80%; height: 60px; background: #080808; border: 1px solid #333; padding: 15px; color: #00ccff; font-size: 0.9em; overflow-y: auto; word-spacing: 10px; }
+        .label { color: #888; align-self: flex-start; margin-left: 10%; margin-bottom: 5px; font-size: 0.8em; }
+        
         .status { font-size: 0.8em; color: #666; margin-top: 10px; }
     </style>
 </head>
@@ -24,14 +29,18 @@
 $ HI! Example
 Assss..........@ $ H
 Assss.........@  $ I
-Assssssss.....@ $ !
-    </textarea>
+Assssssss.....@ $ !</textarea>
 
     <div class="controls">
         <button onclick="runEcho()">TRIGGER RESONANCE</button>
     </div>
 
+    <div class="label">OUTPUT:</div>
     <div id="output"></div>
+
+    <div class="label">VOLUME LEVELS (DEBUG):</div>
+    <div id="volume-display"></div>
+
     <div class="status" id="stats"></div>
 
     <script>
@@ -39,22 +48,21 @@ Assssssss.....@ $ !
             const rawCode = document.getElementById('code').value;
             const outputElement = document.getElementById('output');
             const statsElement = document.getElementById('stats');
+            const volElement = document.getElementById('volume-display');
             
-            // 1. Pre-processing: Remove comments
             let lines = rawCode.split('\n');
             let tempCode = "";
             for (let line of lines) {
                 tempCode += line.split('$')[0]; 
             }
             
-            // 2. Filter commands: Only valid characters trigger ticks
-            // This ensures spaces and newlines don't break your timing
             const code = tempCode.replace(/[^As@()\[\]\+\.]/g, '');
             
             let rooms = new Array(300).fill(0);
             let pointer = 0;
             let pc = 0;
             let output = "";
+            let volHistory = []; // Массив для записи громкости
             let loopStack = [];
             let ticks = 0;
 
@@ -104,11 +112,15 @@ Assssssss.....@ $ !
                     }
                 }
 
+                // Записываем уровень громкости ПЕРЕД затуханием (или после выполнения команды)
+                volHistory.push(rooms[pointer]);
+
                 decay();
                 pc++;
             }
 
             outputElement.innerText = output || "> Silence...";
+            volElement.innerText = volHistory.join(" "); // Выводим всю историю громкости
             statsElement.innerText = `Executed in ${ticks} ticks.`;
         }
     </script>
