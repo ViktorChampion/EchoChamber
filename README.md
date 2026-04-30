@@ -5,7 +5,7 @@
 ## 🌌 Concept
 The program runs in a space of 300 "rooms".
 - Every action (command) is a **time tick**.
-- On every tick, the volume in ALL rooms decays by **1 unit**.
+- On every tick, the volume in ALL rooms decays by **1 unit** (except @).
 - If the volume drops to **0**, the data is lost (silence).
 
 ## 🛠 Syntax
@@ -36,7 +36,7 @@ ________________________________________________________________
 ## 🌌 Концепция
 Программа выполняется в пространстве из 300 «комнат». 
 - Каждое действие (команда) — это **такт времени**.
-- На каждом такте звук во всех комнатах затухает на **1 единицу**.
+- На каждом такте звук во всех комнатах затухает на **1 единицу** (кроме @).
 - Если громкость падает до **0**, данные считаются утраченными (тишина).
 
 ## 🛠 Синтаксис
