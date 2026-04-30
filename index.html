@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <title>EchoChamber IDE v1.0</title>
     <style>
-        body { background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        h1 { color: #fff; text-shadow: 0 0 10px #00ff00; margin-bottom: 5px; }
+        body { background: #1a1a1a; color: #ff5500; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #fff; text-shadow: 0 0 10px #ff5500; margin-bottom: 5px; }
         .container { width: 85%; display: flex; flex-direction: column; }
-        textarea { width: 100%; height: 200px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 15px; font-size: 18px; outline: none; box-sizing: border-box; resize: none; }
+        textarea { width: 100%; height: 200px; background: #000; color: #ff5500; border: 1px solid #ff5500; padding: 15px; font-size: 18px; outline: none; box-sizing: border-box; resize: none; }
         #debug-output { width: 100%; background: #080808; color: #00ccff; padding: 15px; font-size: 14px; border: 1px solid #333; border-top: none; white-space: pre-wrap; box-sizing: border-box; margin-bottom: 10px; min-height: 20px; overflow-x: auto; }
         .input-area { margin-bottom: 20px; display: flex; flex-direction: column; }
-        input { background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 10px; font-family: inherit; font-size: 16px; outline: none; }
+        input { background: #000; color: #ff5500; border: 1px solid #ff5500; padding: 10px; font-family: inherit; font-size: 16px; outline: none; }
         .controls { margin-bottom: 20px; gap: 10px; display: flex; }
-        button { background: #00ff00; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; font-family: inherit; }
+        button { background: #ff5500; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; font-family: inherit; }
         button:hover { background: #fff; }
-        #output { width: 100%; min-height: 50px; background: #000; border: 1px dashed #00ff00; padding: 15px; box-sizing: border-box; font-size: 1.5em; }
+        #output { width: 100%; min-height: 50px; background: #000; border: 1px dashed #ff5500; padding: 15px; box-sizing: border-box; font-size: 1.5em; }
         .label { color: #888; font-size: 0.8em; margin-bottom: 5px; text-transform: uppercase; margin-top: 10px; }
     </style>
 </head>
@@ -23,15 +23,15 @@
     <h1>ECHO CHAMBER v1.0</h1>
     <div class="container">
         <div class="label">Code Editor:</div>
-        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ HI! Example
-Assss..........@ $ H
-Assss.........@  $ I
-Assssssss.....@ $ !</textarea>
+        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ Example: Set to 127 and print
+[+]@
+$ Example: Add 33 (3*11)
++++[+++++++++++]@</textarea>
         <div id="debug-output"></div>
 
         <div class="input-area">
-            <div class="label">Input Buffer (for ',' command):</div>
-            <input type="text" id="user-input" oninput="runEcho()" placeholder="Type here to provide input...">
+            <div class="label">Input Buffer:</div>
+            <input type="text" id="user-input" oninput="runEcho()" placeholder="Type here...">
         </div>
 
         <div class="controls">
@@ -44,7 +44,6 @@ Assssssss.....@ $ !</textarea>
 
     <script>
         let showCommands = false;
-        
         function toggleMode() {
             showCommands = !showCommands;
             document.getElementById('modeBtn').innerText = showCommands ? "MODE: COMMAND-INFO" : "MODE: NUMBERS ONLY";
@@ -67,31 +66,48 @@ Assssssss.....@ $ !</textarea>
             for (let line of lines) {
                 let currentLineDebug = "";
                 let codePart = line.split('$')[0]; 
+                let i = 0;
 
-                for (let char of codePart) {
-                    let isCommand = "AsSa@()[],.".includes(char);
-                    
-                    if (isCommand) {
-                        if (char === 'A') rooms[pointer] = 255;
-                        else if (char === 's') rooms[pointer] = Math.max(0, rooms[pointer] - 10);
-                        else if (char === 'a') rooms[pointer] = Math.min(255, rooms[pointer] + 10);
-                        else if (char === 'S') rooms[pointer] = 0;
-                        else if (char === '(') pointer = Math.max(0, pointer - 1);
-                        else if (char === ')') pointer = Math.min(rooms.length - 1, pointer + 1);
-                        else if (char === '@') finalOutput += String.fromCharCode(rooms[pointer]);
-                        else if (char === ',') {
-                            rooms[pointer] = inputPtr < userInput.length ? userInput.charCodeAt(inputPtr++) : 0;
-                        }
+                while (i < codePart.length) {
+                    let char = codePart[i];
+                    let isCommand = "+-@()[],[".includes(char);
 
-                        let val = rooms[pointer];
-                        currentLineDebug += (showCommands ? `${char}-${val} ` : `${val} `);
+                    if (char === '[') {
+                        let end = codePart.indexOf(']', i);
+                        let content = codePart.substring(i + 1, end);
                         
-                        if (char === '.' || char === '(' || char === ')') {
-                            for(let i=0; i<rooms.length; i++) if(rooms[i]>0) rooms[i]--;
+                        // Макросы
+                        if (content === '-') rooms[pointer] = 0;
+                        else if (content === '+') rooms[pointer] = 127;
+                        else if (content === '++') rooms[pointer] = 255;
+                        else {
+                            // Логика множителя: текущая громкость * количество команд внутри
+                            let multiplier = rooms[pointer];
+                            let change = 0;
+                            for(let c of content) {
+                                if(c === '+') change++;
+                                if(c === '-') change--;
+                            }
+                            rooms[pointer] = Math.max(0, Math.min(255, rooms[pointer] + (multiplier * change)));
                         }
-                    } else if (char === ' ') {
-                        currentLineDebug += "  ";
+                        currentLineDebug += `[${content}]-${rooms[pointer]} `;
+                        i = end;
+                    } 
+                    else if (char === '+') rooms[pointer] = Math.min(255, rooms[pointer] + 1);
+                    else if (char === '-') rooms[pointer] = Math.max(0, rooms[pointer] - 1);
+                    else if (char === '(') { pointer = Math.max(0, pointer - 1); decay(); }
+                    else if (char === ')') { pointer = Math.min(rooms.length - 1, pointer + 1); decay(); }
+                    else if (char === '@') finalOutput += String.fromCharCode(rooms[pointer]);
+                    else if (char === ',') { rooms[pointer] = inputPtr < userInput.length ? userInput.charCodeAt(inputPtr++) : 0; decay(); }
+
+                    if (isCommand && char !== '[') {
+                        currentLineDebug += (showCommands ? `${char}-${rooms[pointer]} ` : `${rooms[pointer]} `);
                     }
+                    i++;
+                }
+
+                function decay() {
+                    for(let j=0; j<rooms.length; j++) if(rooms[j]>0) rooms[j]--;
                 }
                 debugLines.push(currentLineDebug);
             }
