@@ -21,8 +21,10 @@
     <h1>ECHO CHAMBER v1.0</h1>
     <div class="container">
         <div class="label">Code Editor:</div>
-        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ DEL Test
-A@</textarea>
+        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ HI! Example
+Assss..........@ $ H
+Assss.........@  $ I
+Assssssss.....@ $ !</textarea>
         <div id="debug-output"></div>
 
         <div class="controls">
@@ -60,21 +62,20 @@ A@</textarea>
                 for (let char of codePart) {
                     let isCommand = "Asa@()[].".includes(char);
                     
-                    if (char === 'A') rooms[pointer] = 127;
-                    else if (char === 's') rooms[pointer] = Math.max(0, rooms[pointer] - 10);
-                    else if (char === 'a') rooms[pointer] = Math.min(127, rooms[pointer] + 10);
-                    else if (char === '(') pointer = Math.max(0, pointer - 1);
-                    else if (char === ')') pointer = Math.min(rooms.length - 1, pointer + 1);
-                    else if (char === '@') {
-                        finalOutput += String.fromCharCode(rooms[pointer]);
-                        // Команда @ не тратит время (decay не вызывается ниже)
-                    }
-                    
                     if (isCommand) {
+                        // Сначала выполняем действие команды
+                        if (char === 'A') rooms[pointer] = 127;
+                        else if (char === 's') rooms[pointer] = Math.max(0, rooms[pointer] - 10);
+                        else if (char === 'a') rooms[pointer] = Math.min(127, rooms[pointer] + 10);
+                        else if (char === '(') pointer = Math.max(0, pointer - 1);
+                        else if (char === ')') pointer = Math.min(rooms.length - 1, pointer + 1);
+                        else if (char === '@') finalOutput += String.fromCharCode(rooms[pointer]);
+
+                        // Фиксируем значение для дебага ДО затухания
                         let val = rooms[pointer];
                         currentLineDebug += (showCommands ? `${char}-${val} ` : `${val} `);
                         
-                        // Decay срабатывает для всего, КРОМЕ @
+                        // Затухание происходит ПОСЛЕ команды, но только если это не @
                         if (char !== '@') {
                             for(let i=0; i<rooms.length; i++) if(rooms[i]>0) rooms[i]--;
                         }
