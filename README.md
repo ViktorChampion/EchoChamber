@@ -1,58 +1,119 @@
 # 🔊 EchoChamber (v1.0)
 
-**EchoChamber** is a challenging esoteric programming language based on acoustics and sound decay. Supports **Extended ASCII (0-255)** and user input.
+**EchoChamber** is a minimalist and hardcore esoteric programming language inspired by Brainfuck but built on the laws of acoustics. Here, your data is **volume**, which decays over time.
 
-## 🌌 Concept
-The program runs in a space of 300 "rooms".
-- Every **movement** or **pause** is a **time tick**.
-- On every tick (`.`, `(`, `)`), the volume in ALL rooms decays by **1 unit**.
-- Commands `A`, `s`, `a`, `S`, `,` and `@` are instantaneous and do **not** cause decay.
-- If the volume drops to **0**, the data is lost (silence).
+---
 
-## 🛠 Syntax
-- `A` (**Scream**) — Sets volume in the current room to **255** (max).
-- `s` (**Whisper**) — Decreases volume by **10**.
-- `a` (**Add**) — Increases volume by **10** (max 255).
-- `S` (**Silence**) — Instantly sets volume in the room to **0**.
-- `,` (**Input**) — Reads one character from the input buffer and sets volume to its ASCII code.
-- `.` (**Pause**) — Does nothing but spends a tick (volume drops by 1). 
-- `@` (**Listen**) — Outputs the character (Extended ASCII) of the current volume.
-- `(` / `)` — Move the pointer. Each move spends a tick (volume drops by 1).
-- `[` ... `]` — **Mirror Loop**. Repeats as many times as the volume level was when entering.
-- `$` — Comment (ignored until the end of the line).
+## 🌌 Concept (The Core)
 
-## 📝 Examples / Примеры
+The program runs in a space of **300 rooms** (memory cells).
+1. **Data**: Each room stores a volume value from **0 to 255** (Extended ASCII).
+2. **Time (Decay)**: Volume is energy. Any physical action (moving between rooms or inputting data) spends time and causes the sound in **all** rooms to decay by **1 unit**.
+3. **Silence**: If the volume drops to 0, the data is lost.
 
-### Printing 'H' (ASCII 72) / Печать буквы 'H' (ASCII 72)
+---
+
+## 🛠 Syntax (8 Commands)
+
+
+| Command | Description | Decay (-1) |
+|:-------:|:---------|:--------------:|
+| `+` | Increase volume in the current room by **1**. | No |
+| `-` | Decrease volume in the current room by **1**. | No |
+| `@` | **Listen**: Output the ASCII character of the current volume. | No |
+| `,` | **Input**: Read a character and set the room's volume to its code. | **Yes** |
+| `(` | Move to the room on the **left**. | **Yes** |
+| `)` | Move to the room on the **right**. | **Yes** |
+| `[` | Start of an acoustic loop / macro. | No |
+| `]` | End of an acoustic loop / macro. | No |
+| `$` | Comment (ignored until the end of the line). | No |
+
+---
+
+## 🌀 Smart Loops & Macros
+
+In EchoChamber, loops are more efficient than in classic Brainfuck. They allow for rapid volume manipulation.
+
+### 1. Multipliers
+If there is a value before the loop (e.g., you pressed `+++`), the commands inside the loop are multiplied by that value.
+- `+++ [ +++++++++++ ]` — Adds **33** to the current volume ($3 \times 11$).
+- `+++++ [ -- ]` — Subtracts **10** from the current volume ($5 \times 2$).
+
+### 2. Acoustic Macros (Presets)
+Special combinations inside brackets allow you to instantly change the room's state:
+- `[-]` — **Mute**: Instantly resets volume to **0**.
+- `[+]` — **Standard**: Sets volume to **127** (Standard ASCII limit).
+- `[++]` — **Max Resonance**: Sets volume to **255** (Extended ASCII limit).
+
+---
+
+## 📝 Code Examples
+
+### Printing "HI!"
 ```echo
-$ Option 1: Fast decay with whispers (255 - 180 - 3 points)
-$ Вариант 1: Быстрое затухание шепотом
-A s s s s s s s s s s s s s s s s s ... @ 
-
-$ Option 2: Echo Program (reads from input and shouts back)
-$ Вариант 2: Программа-эхо (читает ввод и выводит его)
-, @
+[+] $ Set to 127
+---------- ---------- ---------- ---------- ---------- ----- @ $ H (72)
++ @ $ I (73)
+[-] +++ [ ++++++++++ ] +++ @ $ ! (33)
 ```
 
 ________________________________________________________________
 
 # 🔊 EchoChamber (v1.0)
 
-**EchoChamber** — это сложный эзотерический язык программирования, основанный на концепции акустики и затухания звука. Поддерживает **Extended ASCII (0-255)** и пользовательский ввод.
+**EchoChamber** — это минималистичный и хардкорный эзотерический язык программирования, вдохновленный Brainfuck, но построенный на законах акустики. Здесь ваши данные — это **громкость звука**, которая затухает с течением времени.
 
-## 🌌 Концепция
-- Каждое **перемещение** или **пауза** — это **такт времени**.
-- На каждом такте (`.`, `(`, `)`) звук во всех комнатах затухает на **1 единицу**.
-- Команды `A`, `s`, `a`, `S`, `,` и `@` выполняются мгновенно и **не вызывают** затухания.
-- Диапазон громкости **0-255** (Extended ASCII).
+---
 
-## 🛠 Синтаксис
-- `A` (**Крик**) — Устанавливает громкость в текущей комнате на **255**.
-- `s` (**Шепот**) — Снижает громкость на **10**.
-- `a` (**Усиление**) — Увеличивает громкость на **10**.
-- `S` (**Тишина**) — Обнуляет громкость в текущей комнате.
-- `,` (**Ввод**) — Считывает один символ из ввода и записывает его код в громкость комнаты.
-- `.` (**Пауза**) — Тратит такт времени (громкость падает на 1).
-- `@` (**Слушать**) — Выводит символ текущей громкости.
-- `(` / `)` — Переход между комнатами. Тратит такт (-1 к громкости).
-- `$` — Комментарий.
+## 🌌 Концепция (Основа)
+
+Программа выполняется в пространстве из **300 комнат** (ячеек памяти).
+1. **Данные**: В каждой комнате хранится значение громкости от **0 до 255** (Extended ASCII).
+2. **Время (Decay)**: Любое физическое действие (перемещение между комнатами или ввод данных) тратит время и заставляет звук во **всех** комнатах затухать на **1 единицу**.
+3. **Тишина**: Если громкость падает до 0, данные считаются утраченными.
+
+---
+
+## 🛠 Синтаксис (8 Команд)
+
+
+| Команда | Описание | Затухание (-1) |
+|:-------:|:---------|:--------------:|
+| `+` | Увеличить громкость на **1**. | Нет |
+| `-` | Уменьшить громкость на **1**. | Нет |
+| `@` | **Listen**: Вывести ASCII-символ текущей громкости. | Нет |
+| `,` | **Input**: Считать символ и записать его код в комнату. | **Да** |
+| `(` | Перейти в комнату **слева**. | **Да** |
+| `)` | Перейти в комнату **справа**. | **Да** |
+| `[` | Начало акустического цикла / макроса. | Нет |
+| `]` | Конец акустического цикла / макроса. | Нет |
+| `$` | Комментарий (игнорируется). | Нет |
+
+---
+
+## 🌀 Умные циклы и Макросы
+
+Циклы в EchoChamber работают как множители, позволяя быстро менять громкость.
+
+### 1. Множители (Multipliers)
+Если перед циклом стоит значение, команды внутри цикла умножатся на него.
+- `+++ [ +++++++++++ ]` — Добавит **33** к громкости ($3 \times 11$).
+- `+++++ [ -- ]` — Вычтет **10** ($5 \times 2$).
+
+### 2. Акустические макросы (Presets)
+Мгновенная настройка состояния комнаты:
+- `[-]` — **Mute**: Обнуляет громкость.
+- `[+]` — **Standard**: Устанавливает громкость на **127**.
+- `[++]` — **Max Resonance**: Устанавливает громкость на **255**.
+
+---
+
+## 📝 Примеры кода
+
+### Печать "HI!"
+```echo
+[+] $ Ставим 127
+---------- ---------- ---------- ---------- ---------- ----- @ $ H (72)
++ @ $ I (73)
+[-] +++ [ ++++++++++ ] +++ @ $ ! (33)
+```
