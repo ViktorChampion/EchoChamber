@@ -11,7 +11,7 @@
         #debug-output { width: 100%; background: #080808; color: #00ccff; padding: 15px; font-size: 14px; border: 1px solid #333; border-top: none; white-space: pre-wrap; box-sizing: border-box; margin-bottom: 10px; min-height: 20px; overflow-x: auto; }
         .input-area { margin-bottom: 20px; display: flex; flex-direction: column; }
         input { background: #000; color: #ff5500; border: 1px solid #ff5500; padding: 10px; font-family: inherit; font-size: 16px; outline: none; }
-        .controls { margin-bottom: 20px; gap: 10px; display: flex; }
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
         button { background: #ff5500; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; font-family: inherit; }
         button:hover { background: #fff; }
         #output { width: 100%; min-height: 50px; background: #000; border: 1px dashed #ff5500; padding: 15px; box-sizing: border-box; font-size: 1.5em; }
@@ -23,10 +23,8 @@
     <h1>ECHO CHAMBER v1.0</h1>
     <div class="container">
         <div class="label">Code Editor:</div>
-        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ Example: Set to 127 and print
-[+]@
-$ Example: Add 33 (3*11)
-+++[+++++++++++]@</textarea>
+        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ Classic Echo: Read and Print
+,[@,]</textarea>
         <div id="debug-output"></div>
 
         <div class="input-area">
@@ -56,63 +54,73 @@ $ Example: Add 33 (3*11)
             const outputElement = document.getElementById('output');
             const debugElement = document.getElementById('debug-output');
             
-            let lines = rawCode.split('\n');
+            let cleanCode = rawCode.split('\n').map(l => l.split('$')[0]).join('').replace(/\s/g, '');
             let rooms = new Array(300).fill(0);
             let pointer = 0;
             let inputPtr = 0;
             let finalOutput = "";
-            let debugLines = [];
+            let debugLog = "";
+            let pc = 0;
+            let ticks = 0;
+            let outputChars = 0;
 
-            for (let line of lines) {
-                let currentLineDebug = "";
-                let codePart = line.split('$')[0]; 
-                let i = 0;
+            const decay = () => {
+                for(let j=0; j<rooms.length; j++) if(rooms[j]>0) rooms[j]--;
+            };
 
-                while (i < codePart.length) {
-                    let char = codePart[i];
-                    let isCommand = "+-@()[],[".includes(char);
+            while (pc < cleanCode.length && ticks < 10000) {
+                let char = cleanCode[pc];
+                ticks++;
 
-                    if (char === '[') {
-                        let end = codePart.indexOf(']', i);
-                        let content = codePart.substring(i + 1, end);
-                        
-                        // Макросы
-                        if (content === '-') rooms[pointer] = 0;
-                        else if (content === '+') rooms[pointer] = 127;
-                        else if (content === '++') rooms[pointer] = 255;
-                        else {
-                            // Логика множителя: текущая громкость * количество команд внутри
-                            let multiplier = rooms[pointer];
-                            let change = 0;
-                            for(let c of content) {
-                                if(c === '+') change++;
-                                if(c === '-') change--;
-                            }
-                            rooms[pointer] = Math.max(0, Math.min(255, rooms[pointer] + (multiplier * change)));
-                        }
-                        currentLineDebug += `[${content}]-${rooms[pointer]} `;
-                        i = end;
-                    } 
-                    else if (char === '+') rooms[pointer] = Math.min(255, rooms[pointer] + 1);
-                    else if (char === '-') rooms[pointer] = Math.max(0, rooms[pointer] - 1);
-                    else if (char === '(') { pointer = Math.max(0, pointer - 1); decay(); }
-                    else if (char === ')') { pointer = Math.min(rooms.length - 1, pointer + 1); decay(); }
-                    else if (char === '@') finalOutput += String.fromCharCode(rooms[pointer]);
-                    else if (char === ',') { rooms[pointer] = inputPtr < userInput.length ? userInput.charCodeAt(inputPtr++) : 0; decay(); }
-
-                    if (isCommand && char !== '[') {
-                        currentLineDebug += (showCommands ? `${char}-${rooms[pointer]} ` : `${rooms[pointer]} `);
+                if (char === '+') rooms[pointer] = Math.min(255, rooms[pointer] + 1);
+                else if (char === '-') rooms[pointer] = Math.max(0, rooms[pointer] - 1);
+                else if (char === '(') { pointer = Math.max(0, pointer - 1); decay(); }
+                else if (char === ')') { pointer = Math.min(rooms.length - 1, pointer + 1); decay(); }
+                else if (char === '@') { 
+                    if (outputChars < 500) {
+                        finalOutput += String.fromCharCode(rooms[pointer]);
+                        outputChars++;
                     }
-                    i++;
+                }
+                else if (char === ',') { 
+                    rooms[pointer] = inputPtr < userInput.length ? userInput.charCodeAt(inputPtr++) : 0; 
+                    decay(); 
+                }
+                else if (char === '[') {
+                    // Специальные макросы
+                    let sub = cleanCode.substring(pc + 1, cleanCode.indexOf(']', pc));
+                    if (sub === '-') { rooms[pointer] = 0; pc = cleanCode.indexOf(']', pc); }
+                    else if (sub === '+') { rooms[pointer] = 127; pc = cleanCode.indexOf(']', pc); }
+                    else if (sub === '++') { rooms[pointer] = 255; pc = cleanCode.indexOf(']', pc); }
+                    else if (rooms[pointer] === 0) {
+                        let depth = 1;
+                        while (depth > 0) {
+                            pc++;
+                            if (cleanCode[pc] === '[') depth++;
+                            if (cleanCode[pc] === ']') depth--;
+                        }
+                    }
+                }
+                else if (char === ']') {
+                    if (rooms[pointer] !== 0) {
+                        let depth = 1;
+                        while (depth > 0) {
+                            pc--;
+                            if (cleanCode[pc] === '[') depth--;
+                            if (cleanCode[pc] === ']') depth++;
+                        }
+                        pc--; // Возврат к '['
+                    }
                 }
 
-                function decay() {
-                    for(let j=0; j<rooms.length; j++) if(rooms[j]>0) rooms[j]--;
+                if ("+-@()[],".includes(char)) {
+                    debugLog += (showCommands ? `${char}-${rooms[pointer]} ` : `${rooms[pointer]} `);
                 }
-                debugLines.push(currentLineDebug);
+                pc++;
             }
+
             outputElement.innerText = finalOutput || "> Silence...";
-            debugElement.innerText = debugLines.join('\n');
+            debugElement.innerText = debugLog;
         }
         runEcho();
     </script>
