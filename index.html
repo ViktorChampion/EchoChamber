@@ -6,123 +6,88 @@
     <style>
         body { background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         h1 { color: #fff; text-shadow: 0 0 10px #00ff00; margin-bottom: 5px; }
-        p { margin-bottom: 20px; color: #888; }
-        textarea { width: 80%; height: 200px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 15px; font-size: 16px; margin-bottom: 10px; outline: none; }
-        .controls { margin-bottom: 20px; }
-        button { background: #00ff00; color: #000; border: none; padding: 12px 24px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.3s; }
-        button:hover { background: #fff; box-shadow: 0 0 15px #fff; }
-        #output { width: 80%; min-height: 50px; background: #000; border: 1px dashed #00ff00; padding: 15px; white-space: pre-wrap; word-wrap: break-word; font-size: 1.2em; margin-bottom: 10px; }
-        
-        /* НОВОЕ ПОЛЕ ДЛЯ ГРОМКОСТИ */
-        #volume-display { width: 80%; height: 60px; background: #080808; border: 1px solid #333; padding: 15px; color: #00ccff; font-size: 0.9em; overflow-y: auto; word-spacing: 10px; }
-        .label { color: #888; align-self: flex-start; margin-left: 10%; margin-bottom: 5px; font-size: 0.8em; }
-        
-        .status { font-size: 0.8em; color: #666; margin-top: 10px; }
+        .container { width: 85%; display: flex; flex-direction: column; }
+        textarea { width: 100%; height: 200px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 15px; font-size: 18px; outline: none; box-sizing: border-box; resize: none; }
+        #debug-output { width: 100%; background: #080808; color: #00ccff; padding: 15px; font-size: 14px; border: 1px solid #333; border-top: none; white-space: pre-wrap; box-sizing: border-box; margin-bottom: 20px; }
+        .controls { margin-bottom: 20px; gap: 10px; display: flex; }
+        button { background: #00ff00; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; font-family: inherit; }
+        button:hover { background: #fff; }
+        #output { width: 100%; min-height: 50px; background: #000; border: 1px dashed #00ff00; padding: 15px; box-sizing: border-box; font-size: 1.5em; }
+        .label { color: #888; font-size: 0.8em; margin-bottom: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-    <h1>ECHO CHAMBER v1.0</h1>
-    <p>Sound decays with every passing tick...</p>
+    <h1>ECHO CHAMBER v1.1</h1>
+    <div class="container">
+        <div class="label">Code Editor:</div>
+        <textarea id="code" oninput="runEcho()" placeholder="Write code here...">$ HI!
+Assss..........@
+Assss.........@</textarea>
+        <div id="debug-output"></div>
 
-    <textarea id="code" placeholder="A - Scream (127), s - Whisper (-10), + - Resonate (+10), @ - Listen, [] - Mirror Loop, $ - Comment">
-$ HI! Example
-Assss..........@ $ H
-Assss.........@  $ I
-Assssssss.....@ $ !</textarea>
+        <div class="controls">
+            <button id="modeBtn" onclick="toggleMode()">MODE: NUMBERS ONLY</button>
+        </div>
 
-    <div class="controls">
-        <button onclick="runEcho()">TRIGGER RESONANCE</button>
+        <div class="label">Result:</div>
+        <div id="output"></div>
     </div>
 
-    <div class="label">OUTPUT:</div>
-    <div id="output"></div>
-
-    <div class="label">VOLUME LEVELS (DEBUG):</div>
-    <div id="volume-display"></div>
-
-    <div class="status" id="stats"></div>
-
     <script>
+        let showCommands = false;
+        
+        function toggleMode() {
+            showCommands = !showCommands;
+            document.getElementById('modeBtn').innerText = showCommands ? "MODE: COMMAND-INFO" : "MODE: NUMBERS ONLY";
+            runEcho();
+        }
+
         function runEcho() {
             const rawCode = document.getElementById('code').value;
             const outputElement = document.getElementById('output');
-            const statsElement = document.getElementById('stats');
-            const volElement = document.getElementById('volume-display');
+            const debugElement = document.getElementById('debug-output');
             
             let lines = rawCode.split('\n');
-            let tempCode = "";
-            for (let line of lines) {
-                tempCode += line.split('$')[0]; 
-            }
-            
-            const code = tempCode.replace(/[^As@()\[\]\+\.]/g, '');
-            
             let rooms = new Array(300).fill(0);
             let pointer = 0;
-            let pc = 0;
-            let output = "";
-            let volHistory = []; // Массив для записи громкости
-            let loopStack = [];
-            let ticks = 0;
+            let finalOutput = "";
+            let debugLines = [];
 
-            const decay = () => {
-                for (let i = 0; i < rooms.length; i++) {
-                    if (rooms[i] > 0) rooms[i]--;
-                }
-            };
+            // Состояние системы общее для всех строк (звук затухает сквозь строки)
+            for (let line of lines) {
+                let currentLineDebug = "";
+                let codeOnly = line.split('$')[0]; // Игнорим комментарии для логики
 
-            while (pc < code.length && ticks < 100000) {
-                let cmd = code[pc];
-                ticks++;
-
-                if (cmd === 'A') {
-                    rooms[pointer] = 127;
-                } else if (cmd === 's') {
-                    rooms[pointer] = Math.max(0, rooms[pointer] - 10);
-                } else if (cmd === '+') {
-                    rooms[pointer] = Math.min(127, rooms[pointer] + 10);
-                } else if (cmd === '(') {
-                    pointer = Math.max(0, pointer - 1);
-                } else if (cmd === ')') {
-                    pointer = Math.min(rooms.length - 1, pointer + 1);
-                } else if (cmd === '@') {
-                    output += String.fromCharCode(rooms[pointer]);
-                } else if (cmd === '[') {
-                    let v = rooms[pointer];
-                    if (v > 0) {
-                        loopStack.push({ start: pc, count: v });
+                for (let char of codeOnly) {
+                    // Обработка команд
+                    if (char === 'A') rooms[pointer] = 127;
+                    else if (char === 's') rooms[pointer] = Math.max(0, rooms[pointer] - 10);
+                    else if (char === 'a') rooms[pointer] = Math.min(127, rooms[pointer] + 10);
+                    else if (char === '(') pointer = Math.max(0, pointer - 1);
+                    else if (char === ')') pointer = Math.min(rooms.length - 1, pointer + 1);
+                    else if (char === '@') finalOutput += String.fromCharCode(rooms[pointer]);
+                    
+                    // Трата такта только на валидные символы и точки
+                    if ("Asa@()[].".includes(char)) {
+                        let val = rooms[pointer];
+                        currentLineDebug += (showCommands ? `${char}-${val} ` : `${val} `);
+                        
+                        // Decay
+                        for(let i=0; i<rooms.length; i++) if(rooms[i]>0) rooms[i]--;
                     } else {
-                        let depth = 1;
-                        while (depth > 0 && pc < code.length) {
-                            pc++;
-                            if (code[pc] === '[') depth++;
-                            if (code[pc] === ']') depth--;
-                        }
-                    }
-                } else if (cmd === ']') {
-                    if (loopStack.length > 0) {
-                        let currentLoop = loopStack[loopStack.length - 1];
-                        currentLoop.count--;
-                        if (currentLoop.count > 0 && rooms[pointer] > 0) {
-                            pc = currentLoop.start;
-                        } else {
-                            loopStack.pop();
-                        }
+                        currentLineDebug += "  "; // Пропуск для пробелов
                     }
                 }
-
-                // Записываем уровень громкости ПЕРЕД затуханием (или после выполнения команды)
-                volHistory.push(rooms[pointer]);
-
-                decay();
-                pc++;
+                debugLines.push(currentLineDebug);
             }
 
-            outputElement.innerText = output || "> Silence...";
-            volElement.innerText = volHistory.join(" "); // Выводим всю историю громкости
-            statsElement.innerText = `Executed in ${ticks} ticks.`;
+            outputElement.innerText = finalOutput || "> Silence...";
+            debugElement.innerText = debugLines.join('\n');
         }
+
+        // Запуск при загрузке
+        runEcho();
     </script>
 </body>
 </html>
